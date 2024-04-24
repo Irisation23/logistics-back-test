@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.member.dao.mapper.MemberMapper">
+    <select id="memberLogin" parameterType="com.douzon.smartlogistics.domain.member.dto.LoginDto"
+                             resultType="com.douzon.smartlogistics.domain.entity.Member">
+    <!-- 로그인 -->
+        SELECT
+            member_no,
+            member_name,
+            member_id,
+            password,
+            member_role,
+            create_date,
+            ipaddress
+        FROM
+            MEMBER
+        WHERE
+            member_id = #{memberId}
+        AND password = #{password}
+    </select>
+
+    <!--아이디 중복체크-->
+    <select id="checkId" resultType="java.lang.Boolean" parameterType="java.lang.String">
+        SELECT member_id FROM member WHERE member_id = #{memberId}
+    </select>
+
+    <!--로그인시 자동 ip주소 할당-->
+    <update id="saveIpAddress" parameterType="java.util.HashMap">
+        UPDATE
+            MEMBER
+        SET
+            ipaddress = #{ipAddress}
+        WHERE
+            member_no = #{memberNo}
+    </update>
+
+    <!-- 회원 리스트 조회 -->
+    <select id="searchMemberList" resultType="com.douzon.smartlogistics.domain.entity.Member">
+        SELECT
+            member_no,
+            member_name,
+            member_id,
+            password,
+            member_role,
+            create_date,
+            ipaddress
+        FROM
+            MEMBER
+        <where>
+            <if test="memberNo != null">
+                AND member_no LIKE concat(CONCAT('%', #{memberNo}), '%')
+            </if>
+            <if test="memberId != null">
+                AND member_id LIKE concat(CONCAT('%', #{memberId}), '%')
+            </if>
+            <if test="createDate != null and createDate != ''">
+                AND YEAR(create_date) = #{createDate}
+            </if>
+        </where>
+    </select>
+
+    <select id="searchMember" resultType="com.douzon.smartlogistics.domain.entity.Member">
+        SELECT
+            member_no,
+            member_name,
+            member_id,
+            password,
+            member_role,
+            create_date,
+            ipaddress
+        FROM
+         MEMBER
+        WHERE
+            member_no = #{memberNo}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO member (member_name, member_id, password, member_role)
+        VALUES (#{memberName}, #{memberId}, #{password}, #{memberRole} )
+    </insert>
+
+    <update id="modify" parameterType="com.douzon.smartlogistics.domain.entity.Member">
+        UPDATE  member
+        <set>
+            <if test="member.memberName != null">member_name = #{member.memberName},</if>
+            <if test="member.memberId != null">member_id = #{member.memberId},</if>
+            <if test="member.password != null">password = #{member.password},</if>
+            <if test="member.memberRole != null">member_role = #{member.memberRole},</if>
+        </set>
+        WHERE member_no = #{memberNo}
+    </update>
+
+    <delete id="delete" parameterType="Long">
+        DELETE FROM member
+        WHERE member_no IN
+        <foreach item="item" index="index" collection="memberNos" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="retrieve" resultType="Long">
+        SELECT
+            member_no
+        FROM member
+        WHERE member_no = #{member_no}
+    </select>
+
+
+</mapper>

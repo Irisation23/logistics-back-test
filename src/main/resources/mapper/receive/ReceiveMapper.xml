@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.receive.dao.mapper.ReceiveMapper">
+    <insert id="insertReceive">
+        INSERT INTO RECEIVE(RECEIVE_CODE, RECEIVE_DATE, MANAGER, CREATE_IP, CREATE_ID)
+        VALUES (#{receiveCode}, #{receiveDate}, #{manager}, #{createIp},#{createId})
+    </insert>
+    <update id="modifyReceive">
+        UPDATE RECEIVE
+        SET
+        <if test="receiveModifyDto.manager != ''">
+            MANAGER = #{receiveModifyDto.manager},
+        </if>
+        <if test="receiveModifyDto.receiveDate != ''">
+            RECEIVE_DATE = #{receiveModifyDto.receiveDate},
+        </if>
+            MODIFY_DATE = CURRENT_TIMESTAMP,
+            MODIFY_IP = #{receiveModifyDto.modifyIp},
+            MODIFY_ID = #{receiveModifyDto.modifyId}
+        WHERE RECEIVE_CODE = #{receiveModifyDto.receiveCode}
+    </update>
+    <delete id="deleteReceive">
+        DELETE
+        FROM RECEIVE
+        WHERE RECEIVE_CODE = #{receiveCode};
+    </delete>
+    <select id="findReceive" resultType="com.douzon.smartlogistics.domain.receive.dto.ReceiveListDto">
+        SELECT
+        RECEIVE.RECEIVE_CODE,
+        RECEIVE.RECEIVE_DATE,
+        RECEIVE.MANAGER,
+        COUNT(CASE WHEN PORDER_ITEM.PORDER_STATE = 'WAIT' THEN 1 END) AS WAIT_COUNT,
+        COUNT(CASE WHEN PORDER_ITEM.PORDER_STATE = 'ING' THEN 1 END) AS ING_COUNT,
+        COUNT(CASE WHEN PORDER_ITEM.PORDER_STATE = 'CMP' THEN 1 END) AS CMP_COUNT
+        FROM RECEIVE
+        LEFT JOIN RECEIVE_ITEM ON RECEIVE_ITEM.RECEIVE_CODE = RECEIVE.RECEIVE_CODE
+        LEFT JOIN PORDER_ITEM ON RECEIVE_ITEM.PORDER_CODE = PORDER_ITEM.PORDER_CODE AND RECEIVE_ITEM.PORDER_ITEM_NO = PORDER_ITEM.PORDER_ITEM_NO
+        <where>
+            <if test="receiveCode != null and receiveCode != ''">
+                AND RECEIVE.RECEIVE_CODE LIKE CONCAT(CONCAT('%', #{receiveCode}), '%')
+            </if>
+            <if test="manager != null and manager != ''">
+                AND RECEIVE.MANAGER LIKE CONCAT(CONCAT('%', #{manager}), '%')
+            </if>
+            <if test="startDate != null and startDate != ''">
+                <![CDATA[
+                    AND RECEIVE.RECEIVE_DATE >= #{startDate}
+                ]]>
+            </if>
+            <if test="endDate != null and endDate != ''">
+                <![CDATA[
+                    AND RECEIVE.RECEIVE_DATE <= #{endDate}
+                ]]>
+            </if>
+        </where>
+        GROUP BY
+        RECEIVE.RECEIVE_CODE,
+        RECEIVE.RECEIVE_DATE,
+        RECEIVE.MANAGER
+        ORDER BY RECEIVE.RECEIVE_DATE DESC;
+    </select>
+    <select id="retrieve" resultType="com.douzon.smartlogistics.domain.entity.Receive">
+        SELECT RECEIVE_CODE, RECEIVE_DATE, MANAGER, CREATE_DATE, CREATE_IP, CREATE_ID, MODIFY_DATE, MODIFY_IP, MODIFY_ID
+        FROM RECEIVE
+        WHERE RECEIVE_CODE = #{receiveCode};
+    </select>
+</mapper>
+

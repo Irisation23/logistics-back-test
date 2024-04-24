@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:3306/smart_logistics
+    username: 2jo
+    password: 1234
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+
+# actuator 설정
+management:
+  info:
+    java:
+      enabled: true
+    os:
+      enabled: true
+    env:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
+    health:
+      show-details: always
+
+# acuator info를 통해 조회되는 값
+info:
+  contact:
+    email: bunsung0345@gmail.com
+    git-hub: bunsung92
+
+server:
+  tomcat:
+    mbeanregistry:
+      enabled: true
+
+

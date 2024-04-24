@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.mainPage.dao.mapper.MainPageMapper">
+    <select id="warehouseRankList">
+    SELECT
+      w.WAREHOUSE_NAME,
+      SUM(ws.COUNT) AS totalCount
+    FROM
+      WAREHOUSE w
+        INNER JOIN
+      WAREHOUSE_STOCK ws ON w.WAREHOUSE_NO = ws.WAREHOUSE_NO
+    GROUP BY
+      w.WAREHOUSE_NAME
+    ORDER BY
+      totalCount DESC
+      LIMIT 5;
+
+    </select>
+
+    <select id="totalReceivesOrdersList" parameterType="int">
+      SELECT YearMonth,
+             SUM(OrderCount) AS totalOrders,
+             SUM(ReceiveCount) AS totalReceives
+      FROM (
+               SELECT DATE_FORMAT(PORDER_DATE, '%Y-%m') AS YearMonth,
+                      COUNT(*) AS OrderCount,
+                      0 AS ReceiveCount
+               FROM PORDER
+               WHERE YEAR(PORDER_DATE) = #{year} -- 원하는 연도를 지정
+               GROUP BY YearMonth
+
+               UNION ALL
+
+               SELECT DATE_FORMAT(RECEIVE_DATE, '%Y-%m') AS YearMonth,
+                   0 AS OrderCount,
+                   COUNT(*) AS ReceiveCount
+               FROM RECEIVE
+               WHERE YEAR(RECEIVE_DATE) = #{year} -- 원하는 연도를 지정
+               GROUP BY YearMonth
+           ) AS CombinedData
+      GROUP BY YearMonth
+      ORDER BY YearMonth;
+    </select>
+    <select id="stateValueList">
+        SELECT
+            SUM(CASE WHEN STATE = 'WAIT' THEN 1 ELSE 0 END) AS waitCount,
+            SUM(CASE WHEN STATE = 'ING' THEN 1 ELSE 0 END) AS ingCount,
+            SUM(CASE WHEN STATE = 'CMP' THEN 1 ELSE 0 END) AS cmpCount
+        FROM porder;
+    </select>
+
+
+
+</mapper>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.account.dao.mapper.AccountMapper">
+
+
+
+    <select id="searchAccountList" resultType="com.douzon.smartlogistics.domain.entity.Account">
+        SELECT
+            *
+        FROM
+            ACCOUNT
+        <where>
+            <if test="accountNo != null">
+                AND ACCOUNT_NO LIKE concat(CONCAT('%', #{accountNo}), '%')
+            </if>
+            <if test="accountName != null">
+                AND ACCOUNT_NAME LIKE concat(CONCAT('%', #{accountName}), '%')
+            </if>
+            <if test="createDate != null and createDate != ''">
+                AND YEAR(create_date) = #{createDate}
+            </if>
+            <if test="createId != null and createId != ''">
+                AND create_id LIKE CONCAT('%', #{createId}, '%')
+            </if>
+
+
+        </where>
+    </select>
+
+    <insert id="insert">
+        INSERT INTO account (ACCOUNT_NAME, REPRESENTATIVE, CONTACT_NUMBER, BUSINESS_NUMBER, CREATE_IP, CREATE_ID)
+
+        VALUES (#{accountName}, #{representative}, #{contactNumber}, #{businessNumber}, #{createIp}, #{createId})
+    </insert>
+
+    <update id="modify" parameterType="com.douzon.smartlogistics.domain.account.dto.AccountModifyDto">
+    UPDATE  account
+    <set>
+        <if test="accountModifyDto.accountName != null">ACCOUNT_NAME = #{accountModifyDto.accountName},</if>
+        <if test="accountModifyDto.representative != null">REPRESENTATIVE = #{accountModifyDto.representative},</if>
+        <if test="accountModifyDto.contactNumber != null">CONTACT_NUMBER = #{accountModifyDto.contactNumber},</if>
+        <if test="accountModifyDto.businessNumber != null">BUSINESS_NUMBER = #{accountModifyDto.businessNumber},</if>
+        modify_date = CURRENT_TIMESTAMP,
+        <if test="accountModifyDto.modifyIp != null">MODIFY_IP = #{accountModifyDto.modifyIp},</if>
+        <if test="accountModifyDto.modifyId != null">MODIFY_ID = #{accountModifyDto.modifyId}</if>
+    </set>
+    WHERE ACCOUNT_NO = #{accountNo}
+    </update>
+
+    <delete id="delete" parameterType="java.util.ArrayList">
+        DELETE FROM account
+        WHERE ACCOUNT_NO IN
+        <foreach item="item" index="index" collection="accountNos" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="retrieve" resultType="Long">
+        SELECT
+            ACCOUNT_NO
+        FROM account
+        WHERE ACCOUNT_NO = #{account_no}
+    </select>
+
+</mapper>

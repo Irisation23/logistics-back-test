@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.warehouse.dao.mapper.WarehouseMapper">
+  <insert id="insert">
+    INSERT INTO WAREHOUSE(WAREHOUSE_NAME, CREATE_IP, CREATE_ID)
+    VALUES (#{warehouseInsertDto.warehouseName}, #{warehouseInsertDto.createIp}, #{warehouseInsertDto.createId})
+  </insert>
+  <select id="checkExistWarehouse" resultType="boolean">
+    SELECT CASE
+             WHEN EXISTS(
+               SELECT 1
+               FROM WAREHOUSE
+               WHERE WAREHOUSE_NO = #{warehouseNo}
+               ) THEN true
+             ELSE false END
+  </select>
+  <update id="modify">
+    UPDATE WAREHOUSE
+    SET WAREHOUSE_NAME = #{warehouseModifyDto.warehouseName},
+        MODIFY_DATE    = CURRENT_TIMESTAMP,
+        MODIFY_IP      = #{warehouseModifyDto.modifyIp},
+        MODIFY_ID      = #{warehouseModifyDto.modifyId}
+    WHERE WAREHOUSE_NO = #{warehouseNo}
+  </update>
+  <delete id="delete">
+    DELETE
+    FROM WAREHOUSE
+    WHERE WAREHOUSE_NO = #{warehouseNo}
+  </delete>
+  <select id="warehouseList" resultType="com.douzon.smartlogistics.domain.entity.Warehouse">
+    SELECT WAREHOUSE_NO,
+    WAREHOUSE_NAME,
+    CREATE_DATE,
+    CREATE_IP,
+    CREATE_ID,
+    MODIFY_DATE,
+    MODIFY_IP,
+    MODIFY_ID
+    FROM WAREHOUSE
+    <where>
+      <if test="warehouseNo != null">
+        AND WAREHOUSE_NO = #{warehouseNo}
+      </if>
+      <if test="warehouseName != null and warehouseName != ''">
+        AND WAREHOUSE_NAME LIKE CONCAT(CONCAT('%', #{warehouseName}, '%'))
+      </if>
+    </where>
+    ORDER BY
+      SUBSTRING(WAREHOUSE_NAME, 1, 1),
+      CAST(SUBSTRING(WAREHOUSE_NAME, 3) AS UNSIGNED);
+  </select>
+    <select id="searchInventoryList" resultType="com.douzon.smartlogistics.domain.entity.Warehouse">
+        select WAREHOUSE_STOCK_NO, WAREHOUSE_NO, RECEIVE_CODE, RECEIVE_ITEM_NO, ITEM_CODE, COUNT, REGIST_DATE, CREATE_DATE, CREATE_IP, CREATE_ID, MODIFY_DATE, MODIFY_IP, MODIFY_ID
+        from WAREHOUSE_STOCK
+        <where>
+            <if test = "warehouseSectionNo != null and warehouseSectionNo != ''">
+                AND SECTION_NO Like CONCAT('%',#{warehouseSectionNo},'%')
+            </if>
+            <if test = "receiveItemNo != null  and receiveItemNo != ''">
+                AND RECEIVE_ITEM_NO Like CONCAT('%',#{receiveItemNo},'%')
+            </if>
+            <if test = "itemCode != null and itemCode != ''">
+                AND ITEM_CODE Like CONCAT('%',#{itemCode},'%')
+            </if>
+        </where>
+    </select>
+    <delete id="deleteReceiveWarehouse">
+        DELETE
+        FROM WAREHOUSE_STOCK
+        WHERE RECEIVE_CODE = #{receiveCode};
+    </delete>
+</mapper>

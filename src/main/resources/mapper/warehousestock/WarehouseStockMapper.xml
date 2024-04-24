@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.warehousestock.dao.mapper.WarehouseStockMapper">
+<insert id="insertWarehouseStock">
+  INSERT INTO WAREHOUSE_STOCK(WAREHOUSE_NO, RECEIVE_CODE, RECEIVE_ITEM_NO, ITEM_CODE, COUNT, REGIST_DATE,
+                              CREATE_IP,
+                              CREATE_ID)
+  VALUES
+    (#{receiveItem.warehouseNo},#{receiveItem.receiveCode},#{receiveItem.receiveItemNo},#{receiveItem.itemCode},
+     #{receiveItem.receiveCount},#{receiveDate},#{receiveItem.createIp},#{receiveItem.createId});
+</insert>
+<update id="modifyWarehouseStock">
+  UPDATE WAREHOUSE_STOCK
+  SET
+  <if test="ReceiveItem.warehouseNo != '' and ReceiveItem.warehouseNo != null">
+        WAREHOUSE_NO = #{ReceiveItem.warehouseNo},
+  </if>
+  <if test="ReceiveItem.receiveCount != '' and ReceiveItem.receiveCount != null">
+      COUNT = #{ReceiveItem.receiveCount},
+  </if>
+      MODIFY_DATE = CURRENT_TIMESTAMP,
+      MODIFY_IP = #{ReceiveItem.modifyIp},
+      MODIFY_ID = #{ReceiveItem.modifyId}
+  WHERE RECEIVE_CODE = #{ReceiveItem.receiveCode}
+    AND RECEIVE_ITEM_NO = #{ReceiveItem.receiveItemNo}
+</update>
+<!-- 창고 재고번호로 창고재고 조회-->
+<!-- 창고 번호로 창고재고 조회-->
+<!-- 창고 이름으로 창고재고 조회 - 창고 테이블에 조인이 필요-->
+<!-- 입고 코드와 입고 순번으로 창고재고 조회 - 입고품목 테이블에 조인이 필요-->
+<!-- 품목 코드로 창고재고 조회-->
+<!-- 품목 이름으로 창고재고 조회 - 품목 테이블에 조인이 필요-->
+<!-- 창고적재일시로 창고재고 조회-->
+  <select id="searchWarehouseStockList" resultType="com.douzon.smartlogistics.domain.warehousestock.dto.WarehouseStockResponseDto">
+    SELECT WS.WAREHOUSE_STOCK_NO,
+    WS.WAREHOUSE_NO,
+    WS.RECEIVE_CODE,
+    WS.RECEIVE_ITEM_NO,
+    WS.ITEM_CODE,
+    WS.COUNT,
+    WS.REGIST_DATE,
+    WS.CREATE_DATE,
+    WS.CREATE_IP,
+    WS.CREATE_ID,
+    WS.MODIFY_DATE,
+    WS.MODIFY_IP,
+    WS.MODIFY_ID,
+    I.ITEM_NAME,
+    W.WAREHOUSE_NAME
+    FROM WAREHOUSE_STOCK WS
+    INNER JOIN ITEM I ON WS.ITEM_CODE = I.ITEM_CODE
+    INNER JOIN WAREHOUSE W ON WS.WAREHOUSE_NO = W.WAREHOUSE_NO
+    <where>
+      <if test="warehouseName != null and warehouseName != ''">
+        AND W.WAREHOUSE_NAME = #{warehouseName}
+      </if>
+      <if test="warehouseStockNo != null and warehouseStockNo != ''">
+        AND WS.WAREHOUSE_STOCK_NO = #{warehouseStockNo}
+      </if>
+      <if test="warehouseNo != null">
+        AND WS.WAREHOUSE_NO = #{warehouseNo}
+      </if>
+      <if test="receiveCode != null and receiveCode != ''">
+        AND WS.RECEIVE_CODE LIKE CONCAT('%', #{receiveCode}, '%')
+      </if>
+      <if test="receiveItemNo != null">
+        AND WS.RECEIVE_ITEM_NO = #{receiveItemNo}
+      </if>
+      <if test="itemCode != null">
+        AND WS.ITEM_CODE = #{itemCode}
+      </if>
+      <if test="itemName != null and itemName != ''">
+        AND I.ITEM_NAME = #{itemName}
+      </if>
+      <if test="startDate != null and startDate != ''">
+        <![CDATA[ AND (WS.REGIST_DATE) >= #{startDate} ]]>
+      </if>
+      <if test="endDate != null and endDate != ''">
+        <![CDATA[ AND (WS.REGIST_DATE) <= #{endDate} ]]>
+      </if>
+    </where>
+  </select>
+  <select id="searchWarehouseStocks"
+    resultType="com.douzon.smartlogistics.domain.warehousestock.dto.WarehouseStockSumResponseDto">
+    SELECT
+    WS.WAREHOUSE_NO,
+    w.WAREHOUSE_NAME,
+    WS.ITEM_CODE,
+    I.ITEM_NAME,
+    SUM(WS.COUNT) AS TOTAL_COUNT,
+    (SELECT R.MANAGER FROM RECEIVE R WHERE R.RECEIVE_CODE = MAX(WS.RECEIVE_CODE)) AS MANAGER
+    FROM
+    WAREHOUSE_STOCK WS
+    JOIN
+    ITEM I ON WS.ITEM_CODE = I.ITEM_CODE
+    JOIN
+    WAREHOUSE W ON WS.WAREHOUSE_NO = W.WAREHOUSE_NO
+    JOIN
+    RECEIVE R ON R.RECEIVE_CODE = WS.RECEIVE_CODE
+    WHERE
+    W.WAREHOUSE_NAME LIKE CONCAT('%', #{warehouseName}, '%')
+    AND
+    I.ITEM_NAME LIKE CONCAT('%', #{itemName}, '%')
+    AND
+    R.MANAGER LIKE CONCAT('%', #{manager}, '%')
+    GROUP BY
+    WS.WAREHOUSE_NO,
+    WS.ITEM_CODE,
+    I.ITEM_NAME,
+    W.WAREHOUSE_NAME
+  </select>
+  <delete id="deleteReceiveItemWarehouseStock">
+      DELETE
+      FROM WAREHOUSE_STOCK
+      WHERE RECEIVE_ITEM_NO=#{receiveItemNo}
+        AND RECEIVE_CODE=#{receiveCode}
+  </delete>
+</mapper>

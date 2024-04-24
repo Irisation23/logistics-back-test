@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.porder.dao.mapper.POrderMapper">
+  <!-- 발주 등록  -->
+  <insert id="insert">
+    INSERT INTO PORDER(porder_code, manager, porder_date, create_ip, create_id, account_no)
+    VALUES (#{pOrderCode}, #{manager}, #{pOrderDate}, #{createIp}, #{createId}, #{accountNo})
+  </insert>
+
+  <!-- 발주 수정 -->
+  <update id="modify">
+    UPDATE PORDER
+    SET PORDER_DATE = CURRENT_TIMESTAMP,
+        MANAGER     = #{pOrderModifyDto.manager},
+        MODIFY_IP   = #{pOrderModifyDto.modifyIp},
+        MODIFY_ID   = #{pOrderModifyDto.modifyId},
+        ACCOUNT_NO  = #{pOrderModifyDto.accountNo}
+    WHERE PORDER_CODE = #{pOrderCode}
+  </update>
+  <!-- 발주 완료 -->
+  <update id="modifyStateToCmp">
+    UPDATE PORDER
+    SET MODIFY_IP = #{pOrderItemStateModifyDto.modifyIp},
+        MODIFY_ID = #{pOrderItemStateModifyDto.modifyId},
+        STATE     = 'CMP'
+    WHERE PORDER_CODE = #{pOrderCode}
+  </update>
+
+  <!-- 발주 진행 -->
+  <update id="modifyStateToIng">
+    UPDATE PORDER
+    SET MODIFY_IP = #{pOrderItemStateModifyDto.modifyIp},
+        MODIFY_ID = #{pOrderItemStateModifyDto.modifyId},
+        STATE     = 'ING'
+    WHERE PORDER_CODE = #{pOrderCode}
+  </update>
+
+  <!-- 발주 삭제 -->
+  <delete id="delete">
+    DELETE
+    FROM PORDER
+    WHERE PORDER_CODE IN
+    <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </delete>
+  <select id="checkPOrder" resultType="com.douzon.smartlogistics.domain.entity.POrder">
+    SELECT porder_code,
+           porder_date,
+           create_date,
+           create_ip,
+           create_id,
+           modify_date,
+           modify_ip,
+           modify_id,
+           state,
+           account_no
+    FROM PORDER
+    WHERE PORDER_CODE IN
+    <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </select>
+
+  <!-- 발주 조회 -->
+  <select id="searchPOrder" resultType="com.douzon.smartlogistics.domain.entity.POrder">
+    SELECT
+    porder_code,
+    porder_date,
+    manager,
+    account_no,
+    state,
+    create_date,
+    create_ip,
+    create_id,
+    modify_date,
+    modify_ip,
+    modify_id
+    FROM PORDER
+    <where>
+      <if test="pOrderCode != null and pOrderCode != ''">
+        AND PORDER_CODE LIKE CONCAT(CONCAT('%', #{pOrderCode}, '%'))
+      </if>
+      <if test="manager != null and manager != ''">
+        AND MANAGER LIKE CONCAT(CONCAT('%', #{manager}, '%'))
+      </if>
+      <if test="state != null">
+        AND STATE = #{state}
+      </if>
+      <if test="createId != null and createId != ''">
+        AND CREATE_ID LIKE CONCAT(CONCAT('%', #{createId}, '%'))
+      </if>
+      <if test="createIp != null and createIp != ''">
+        AND CREATE_IP LIKE CONCAT(CONCAT('%', #{createIp}, '%'))
+      </if>
+      <if test="accountNo != null">
+        AND ACCOUNT_NO = #{accountNo}
+      </if>
+      <if test="startDate != null and startDate != ''">
+        <![CDATA[ AND DATE(PORDER_DATE) >= #{startDate} ]]>
+      </if>
+      <if test="endDate != null and endDate != ''">
+        <![CDATA[ AND DATE(PORDER_DATE) <= #{endDate} ]]>
+      </if>
+      <if test="pOrderDate != null and pOrderDate != ''">
+        <![CDATA[ AND DATE(PORDER_DATE) >= #{pOrderDate} ]]>
+      </if>
+    </where>
+  </select>
+  <select id="retrieve" resultType="com.douzon.smartlogistics.domain.entity.POrder">
+    SELECT porder_code,
+           porder_date,
+           create_date,
+           create_ip,
+           create_id,
+           modify_date,
+           modify_ip,
+           modify_id,
+           state,
+           account_no
+    FROM PORDER
+    WHERE PORDER_CODE = #{pOrderCode}
+  </select>
+  <select id="checkExistPOrder" resultType="boolean">
+    SELECT CASE
+             WHEN EXISTS(
+               SELECT 1
+               FROM PORDER
+               WHERE PORDER_CODE = #{pOrderCode}
+               ) THEN true
+             ELSE false END
+  </select>
+  <select id="exceptSearchCmpPOrder" resultType="com.douzon.smartlogistics.domain.entity.POrder">
+    SELECT PORDER_CODE, PORDER_DATE, MANAGER, ACCOUNT_NO, STATE, CREATE_DATE, CREATE_IP, CREATE_ID, MODIFY_DATE, MODIFY_IP, MODIFY_ID
+    FROM PORDER
+    <where>
+      (STATE = 'WAIT' OR STATE = 'ING')
+      <if test="pOrderCode != null and pOrderCode != ''">
+        AND PORDER_CODE LIKE CONCAT(CONCAT('%', #{pOrderCode}), '%')
+      </if>
+      <if test="manager != null and manager != ''">
+        AND MANAGER LIKE CONCAT(CONCAT('%', #{manager}), '%')
+      </if>
+      <if test="accountNo != null and accountNo != ''">
+        AND ACCOUNT_NO LIKE CONCAT(CONCAT('%', #{accountNo}), '%')
+      </if>
+      <if test="startDate != null and startDate != ''">
+        <![CDATA[
+                    AND PORDER_DATE >= #{startDate}
+                ]]>
+      </if>
+      <if test="endDate != null and endDate != ''">
+        <![CDATA[
+                    AND PORDER_DATE <= #{endDate}
+                ]]>
+      </if>
+    </where>
+  </select>
+  <select id="searchPOrderPK" resultType="com.douzon.smartlogistics.domain.entity.POrder">
+    SELECT
+      porder_code,
+      porder_date,
+      manager,
+      account_no,
+      state,
+      create_date,
+      create_ip,
+      create_id,
+      modify_date,
+      modify_ip,
+      modify_id
+    FROM PORDER
+    ORDER BY PORDER_CODE DESC
+    LIMIT 1;
+  </select>
+
+  <select id="searchWarehouseStockList" resultType="com.douzon.smartlogistics.domain.warehousestock.dto.WarehouseStockResponseDto">
+    SELECT WS.WAREHOUSE_STOCK_NO,
+    WS.WAREHOUSE_NO,
+    WS.RECEIVE_CODE,
+    WS.RECEIVE_ITEM_NO,
+    WS.ITEM_CODE,
+    WS.COUNT,
+    WS.REGIST_DATE,
+    WS.CREATE_DATE,
+    WS.CREATE_IP,
+    WS.CREATE_ID,
+    WS.MODIFY_DATE,
+    WS.MODIFY_IP,
+    WS.MODIFY_ID,
+    I.ITEM_NAME,
+    W.WAREHOUSE_NAME
+    FROM WAREHOUSE_STOCK WS
+    INNER JOIN ITEM I ON WS.ITEM_CODE = I.ITEM_CODE
+    INNER JOIN WAREHOUSE W ON WS.WAREHOUSE_NO = W.WAREHOUSE_NO
+    <where>
+      <if test="itemName != null and itemName != ''">
+        AND I.ITEM_NAME LIKE CONCAT(CONCAT('%', #{itemName}), '%')
+      </if>
+    </where>
+  </select>
+</mapper>

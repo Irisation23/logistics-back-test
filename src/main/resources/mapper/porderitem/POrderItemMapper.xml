@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.porderitem.dao.mapper.POrderItemMapper">
+
+  <!--  발주 품목 등록 -->
+  <insert id="insert" parameterType="com.douzon.smartlogistics.domain.porderitem.dto.POrderItemInsertDto">
+    INSERT INTO PORDER_ITEM(PORDER_ITEM_NO,
+                            PORDER_CODE,
+                            ITEM_CODE,
+                            PORDER_COUNT,
+                            PORDER_PRICE,
+                            PORDER_ITEM_PRICE,
+                            RECEIVE_DEADLINE,
+                            CREATE_IP,
+                            CREATE_ID)
+    VALUES (#{pOrderItem.pOrderItemNo},
+            #{pOrderItem.pOrderCode},
+            #{pOrderItem.itemCode},
+            #{pOrderItem.pOrderCount},
+            #{pOrderItem.pOrderPrice},
+            #{pOrderItem.pOrderItemPrice},
+            #{pOrderItem.receiveDeadline},
+            #{pOrderItem.createIp},
+            #{pOrderItem.createId});
+  </insert>
+  <!-- 발주 품목 수정 (상태x) -->
+  <update id="modify">
+    UPDATE PORDER_ITEM
+    SET ITEM_CODE         = #{pOrderItemModifyDto.itemCode},
+        PORDER_COUNT      = #{pOrderItemModifyDto.pOrderCount},
+        PORDER_PRICE      = #{pOrderItemModifyDto.pOrderPrice},
+        PORDER_ITEM_PRICE = #{pOrderItemModifyDto.pOrderItemPrice},
+        RECEIVE_DEADLINE  = #{pOrderItemModifyDto.receiveDeadline},
+        MODIFY_DATE       = CURRENT_TIMESTAMP,
+        MODIFY_IP         = #{pOrderItemModifyDto.modifyIp},
+        MODIFY_ID         = #{pOrderItemModifyDto.modifyId}
+    WHERE PORDER_ITEM_NO = #{pOrderItemNo}
+      AND PORDER_CODE = #{pOrderItemModifyDto.pOrderCode}
+
+  </update>
+  <!-- 발주 품목 수정 (상태x) -->
+  <!-- 발주 품목 수정 (상태O) -->
+  <update id="modifyState">
+    UPDATE PORDER_ITEM
+    SET PORDER_STATE = #{pOrderItemStateModifyDto.pOrderState},
+        MODIFY_DATE  = CURRENT_TIMESTAMP,
+        MODIFY_IP    = #{pOrderItemStateModifyDto.modifyIp},
+        MODIFY_ID    = #{pOrderItemStateModifyDto.modifyId}
+    WHERE PORDER_ITEM_NO = #{pOrderItemNo}
+      AND PORDER_CODE = #{pOrderItemStateModifyDto.pOrderCode}
+  </update>
+
+  <delete id="delete">
+    DELETE
+    FROM PORDER_ITEM
+    WHERE PORDER_CODE IN
+    <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </delete>
+  <delete id="deletePOrderItem">
+    DELETE
+    FROM PORDER_ITEM
+    WHERE PORDER_ITEM_NO IN
+    <foreach item="item" index="index" collection="noIngStatePOrdersItem" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    AND PORDER_CODE = #{pOrderCode}
+  </delete>
+  <select id="retrieve" resultType="com.douzon.smartlogistics.domain.entity.POrderItem">
+    SELECT PORDER_ITEM_NO,
+           PORDER_CODE,
+           ITEM_CODE,
+           PORDER_COUNT,
+           PORDER_PRICE,
+           PORDER_ITEM_PRICE,
+           PORDER_STATE,
+           RECEIVE_DEADLINE,
+           CREATE_DATE,
+           CREATE_IP,
+           CREATE_ID,
+           MODIFY_DATE,
+           MODIFY_IP,
+           MODIFY_ID,
+           PORDER_STATE
+    FROM PORDER_ITEM
+    WHERE PORDER_ITEM_NO = #{pOrderItemNo}
+      AND PORDER_CODE = #{pOrderCode};
+  </select>
+    <select id="searchPOrderItemList" resultType="com.douzon.smartlogistics.domain.entity.POrderItem">
+        SELECT
+            PI.PORDER_ITEM_NO,
+            PI.PORDER_CODE,
+            PI.ITEM_CODE,
+            I.ITEM_NAME, -- ITEM 테이블에서 ITEM_NAME을 가져옴
+            PI.PORDER_COUNT,
+            PI.PORDER_PRICE,
+            PI.PORDER_ITEM_PRICE,
+            PI.PORDER_STATE,
+            PI.RECEIVE_DEADLINE,
+            PI.CREATE_DATE,
+            PI.CREATE_IP,
+            PI.CREATE_ID,
+            PI.MODIFY_DATE,
+            PI.MODIFY_IP,
+            PI.MODIFY_ID,
+            PI.PORDER_STATE
+        FROM PORDER_ITEM AS PI
+                 INNER JOIN ITEM AS I ON PI.ITEM_CODE = I.ITEM_CODE
+        WHERE PI.PORDER_CODE = #{pOrderCode};
+    </select>
+    <select id="checkPOrderCode" resultType="java.lang.Boolean">
+    SELECT CASE
+             WHEN EXISTS(
+               SELECT 1
+               FROM PORDER_ITEM
+               WHERE PORDER_CODE = #{pOrderCode}
+               ) THEN true
+             ELSE false END
+  </select>
+  <select id="selectPkNumber" resultType="java.lang.String">
+    SELECT MAX(PORDER_ITEM_NO)
+    FROM PORDER_ITEM
+    WHERE PORDER_CODE = #{pOrderCode};
+  </select>
+  <select id="checkPOrderItems" resultType="com.douzon.smartlogistics.domain.entity.POrderItem">
+    SELECT *
+    FROM PORDER_ITEM
+    WHERE PORDER_ITEM_NO IN
+    <foreach item="item" index="index" collection="pOrderItemNo" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    AND PORDER_CODE = #{pOrderCode}
+  </select>
+  <select id="searchPOrderItemRemainder" resultType="java.lang.Integer">
+    SELECT PORDER_ITEM.PORDER_COUNT - IFNULL(SUM(RECEIVE_ITEM.RECEIVE_COUNT), 0)
+    FROM PORDER_ITEM
+           LEFT JOIN RECEIVE_ITEM
+                     ON PORDER_ITEM.PORDER_CODE = RECEIVE_ITEM.PORDER_CODE
+                       AND PORDER_ITEM.PORDER_ITEM_NO = RECEIVE_ITEM.PORDER_ITEM_NO
+    WHERE PORDER_ITEM.PORDER_CODE = #{porderCode}
+      AND PORDER_ITEM.PORDER_ITEM_NO = #{porderItemNo}
+  </select>
+  <select id="pOrderItemCount" resultType="java.lang.Double">
+    SELECT PORDER_COUNT
+    FROM PORDER_ITEM
+    WHERE PORDER_CODE = #{porderCode}
+      AND PORDER_ITEM_NO = #{porderItemNo}
+  </select>
+  <select id="searchPOrderItemStateCount" resultType="java.lang.Integer">
+    SELECT COUNT(PORDER_STATE)
+    FROM PORDER_ITEM
+    WHERE PORDER_CODE = #{porderCode}
+      AND (PORDER_STATE = 'WAIT' OR PORDER_STATE = 'ING');
+  </select>
+  <select id="exceptSearchCmpPorderItemList" resultType="com.douzon.smartlogistics.domain.entity.POrderItem">
+    SELECT PORDER_ITEM_NO,
+           PORDER_CODE,
+           ITEM_CODE,
+           PORDER_COUNT,
+           PORDER_PRICE,
+           PORDER_ITEM_PRICE,
+           PORDER_STATE,
+           RECEIVE_DEADLINE
+    FROM PORDER_ITEM
+    WHERE PORDER_CODE = #{pOrderCode}
+      AND (PORDER_STATE = 'WAIT' OR PORDER_STATE = 'ING')
+  </select>
+</mapper>

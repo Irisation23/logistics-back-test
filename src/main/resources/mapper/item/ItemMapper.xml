@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.item.dao.mapper.ItemMapper">
+  <!-- 물품 등록  -->
+  <insert id="insert" parameterType="com.douzon.smartlogistics.domain.item.dto.ItemInsertDto">
+    INSERT INTO item (item_name, spec, unit, item_price, create_ip, create_id)
+    VALUES (#{itemName}, #{spec}, #{unit}, #{itemPrice}, #{createIp}, #{createId})
+  </insert>
+
+  <!-- 물품 수정  -->
+  <update id="modify" parameterType="com.douzon.smartlogistics.domain.item.dto.ItemModifyDto">
+    UPDATE item
+    <set>
+      <if test="itemModifyDto.itemName != null">item_name = #{itemModifyDto.itemName},</if>
+      <if test="itemModifyDto.spec != null">spec = #{itemModifyDto.spec},</if>
+      <if test="itemModifyDto.unit != null">unit = #{itemModifyDto.unit},</if>
+      <if test="itemModifyDto.itemPrice != null">item_price = #{itemModifyDto.itemPrice},</if>
+      modify_date = CURRENT_TIMESTAMP,
+      <if test="itemModifyDto.modifyIp != null">modify_ip = #{itemModifyDto.modifyIp},</if>
+      <if test="itemModifyDto.modifyId != null">modify_id = #{itemModifyDto.modifyId}</if>
+    </set>
+    WHERE item_code = #{itemCode}
+  </update>
+
+  <!-- 물품 삭제 -->
+  <delete id="delete">
+    DELETE
+    FROM item
+    WHERE item_code = #{itemCode}
+  </delete>
+
+  <!-- 물품 리스트 조회  -->
+  <select id="searchItemList" resultType="com.douzon.smartlogistics.domain.entity.Item">
+    SELECT
+    ITEM_CODE,
+    ITEM_NAME,
+    SPEC,
+    UNIT,
+    ITEM_PRICE,
+    CREATE_DATE,
+    CREATE_IP,
+    CREATE_ID,
+    MODIFY_DATE,
+    MODIFY_IP,
+    MODIFY_ID
+    FROM item
+    <where>
+      <!-- 검색 조건이 있는 경우에만 해당 조건을 추가 -->
+      <if test="itemCode != null">
+        AND item_code LIKE concat(CONCAT('%', #{itemCode}), '%')
+      </if>
+      <if test="itemName != null and itemName != ''">
+        AND item_name LIKE CONCAT('%', #{itemName}, '%')
+      </if>
+      <if test="createDate != null and createDate != ''">
+        AND YEAR(create_date) = #{createDate}
+      </if>
+      <if test="createId != null and createId != ''">
+        AND create_id LIKE CONCAT('%', #{createId}, '%')
+      </if>
+      <if test="itemPrice != null">
+        AND item_price LIKE CONCAT('%', #{itemPrice}, '%')
+      </if>
+    </where>
+  </select>
+
+  <!-- 물품 단건 조회 -->
+  <select id="retrieve" resultType="com.douzon.smartlogistics.domain.entity.Item">
+    SELECT ITEM_CODE,
+           ITEM_NAME,
+           SPEC,
+           UNIT,
+           ITEM_PRICE,
+           CREATE_DATE,
+           CREATE_IP,
+           CREATE_ID,
+           MODIFY_DATE,
+           MODIFY_IP,
+           MODIFY_ID
+    FROM ITEM
+    WHERE ITEM_CODE = #{itemCode}
+  </select>
+  <!-- 물품 단건 존재여부 -->
+  <select id="checkExistItem" resultType="boolean">
+    SELECT CASE
+             WHEN EXISTS(
+               SELECT 1
+               FROM ITEM
+               WHERE ITEM_CODE = #{itemCode}
+               ) THEN true
+             ELSE false END
+  </select>
+  <select id="findLastPk" resultType="java.lang.Integer">
+    SELECT LAST_INSERT_ID();
+  </select>
+</mapper>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.douzon.smartlogistics.domain.receiveitem.dao.mapper.ReceiveItemMapper">
+    <insert id="insertReceiveItem" parameterType="com.douzon.smartlogistics.domain.receiveitem.dto.ReceiveItemInsertDto">
+        INSERT INTO RECEIVE_ITEM(RECEIVE_CODE, RECEIVE_ITEM_NO, PORDER_CODE, PORDER_ITEM_NO, ITEM_CODE, RECEIVE_COUNT, ACCOUNT_NO, WAREHOUSE_NO, CREATE_IP, CREATE_ID)
+        VALUES (#{receiveItem.receiveCode}, #{receiveItem.receiveItemNo}, #{receiveItem.porderCode}, #{receiveItem.porderItemNo}, #{receiveItem.itemCode}, #{receiveItem.receiveCount}, #{receiveItem.accountNo}, #{receiveItem.warehouseNo}, #{receiveItem.createIp},#{receiveItem.createId});
+    </insert>
+    <update id="modifyReceiveItem">
+        UPDATE RECEIVE_ITEM
+        SET
+        <if test="ReceiveItem.receiveCount != '' and ReceiveItem.receiveCount != null">
+            RECEIVE_COUNT = #{ReceiveItem.receiveCount},
+        </if>
+        <if test="ReceiveItem.warehouseNo != '' and ReceiveItem.warehouseNo != null">
+            WAREHOUSE_NO = #{ReceiveItem.warehouseNo},
+        </if>
+            MODIFY_DATE = CURRENT_TIMESTAMP,
+            MODIFY_IP = #{ReceiveItem.modifyIp},
+            MODIFY_ID = #{ReceiveItem.modifyId}
+        WHERE RECEIVE_CODE = #{ReceiveItem.receiveCode}
+        AND RECEIVE_ITEM_NO = #{ReceiveItem.receiveItemNo}
+    </update>
+    <!-- 입고품목 삭제 -->
+    <delete id="deleteReceiveItem">
+        DELETE
+        FROM RECEIVE_ITEM
+        WHERE RECEIVE_ITEM_NO=#{receiveItemNo}
+        AND RECEIVE_CODE=#{receiveCode}
+    </delete>
+    <!-- 입고코드, 입고순번 기준으로 입고품목 유무조회 -->
+    <select id="retrieveReceiveItem" resultType="com.douzon.smartlogistics.domain.entity.ReceiveItem">
+        SELECT RECEIVE_ITEM_NO, RECEIVE_CODE, PORDER_CODE, PORDER_ITEM_NO, ITEM_CODE, RECEIVE_COUNT, ACCOUNT_NO, WAREHOUSE_NO, CREATE_DATE, CREATE_IP, CREATE_ID, MODIFY_DATE, MODIFY_IP, MODIFY_ID
+        FROM RECEIVE_ITEM
+        WHERE RECEIVE_ITEM_NO=#{receiveItemNo}
+        AND RECEIVE_CODE=#{receiveCode}
+    </select>
+    <!-- 입고코드 기준 입고품목 찾기 -->
+    <select id="searchReceiveItem" resultType="com.douzon.smartlogistics.domain.receiveitem.dto.ReceiveItemListDto">
+        SELECT RECEIVE_ITEM.RECEIVE_CODE,
+               RECEIVE_ITEM.RECEIVE_ITEM_NO,
+               RECEIVE_ITEM.PORDER_CODE,
+               RECEIVE_ITEM.PORDER_ITEM_NO,
+               PORDER_ITEM.PORDER_STATE,
+               PORDER_ITEM.PORDER_COUNT,
+               RECEIVE_ITEM.ITEM_CODE,
+               ITEM.ITEM_NAME,
+               RECEIVE_ITEM.RECEIVE_COUNT,
+               RECEIVE_ITEM.ACCOUNT_NO,
+               ACCOUNT.ACCOUNT_NAME,
+               RECEIVE_ITEM.WAREHOUSE_NO,
+               WAREHOUSE.WAREHOUSE_NAME
+        FROM RECEIVE_ITEM
+        LEFT JOIN ITEM ON RECEIVE_ITEM.ITEM_CODE = ITEM.ITEM_CODE
+        LEFT JOIN ACCOUNT on RECEIVE_ITEM.ACCOUNT_NO = ACCOUNT.ACCOUNT_NO
+        LEFT JOIN WAREHOUSE on RECEIVE_ITEM.WAREHOUSE_NO = WAREHOUSE.WAREHOUSE_NO
+        LEFT JOIN PORDER_ITEM ON RECEIVE_ITEM.PORDER_CODE = PORDER_ITEM.PORDER_CODE AND RECEIVE_ITEM.PORDER_ITEM_NO = PORDER_ITEM.PORDER_ITEM_NO
+        WHERE RECEIVE_CODE=#{receiveCode};
+    </select>
+    <select id="receiveItemCount" resultType="java.lang.Double">
+        SELECT IFNULL(SUM(RECEIVE_COUNT),0)
+        FROM RECEIVE_ITEM
+        WHERE PORDER_CODE=#{pOrderCode}
+        AND PORDER_ITEM_NO=#{pOrderItemNo};
+    </select>
+</mapper>
